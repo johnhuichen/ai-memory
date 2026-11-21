@@ -14,7 +14,7 @@ Memory is a self-evolving system with a stable core. You propose every change to
 ## Starting a task
 1. At the start of every task, read `<MEMORY_ROOT>/src/core.md` from disk, even if it is already in your context.
 2. Read `<MEMORY_ROOT>/src/index.md`.
-3. Read every memory file whose index description relates to the task: its language, tools, codebase, or the kind of work. If you are unsure whether a file is relevant, read it.
+3. Read every memory file whose index description relates to the task: its language, tools, codebase, or the kind of work. If you are unsure whether a file is relevant, read it. Whenever you learn something that changes what the task involves, check the index again.
 
 Why: memory holds the most important lessons from past sessions. Reading the relevant ones before you start lets you apply them and do a better job. Re-reading at fixed points keeps these rules and lessons fresh as the context window grows.
 
