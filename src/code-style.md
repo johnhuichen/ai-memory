@@ -16,3 +16,6 @@ Prefer immutable data and pure functions by default; they are easier to reason a
 - Expose state through private fields with read-only accessors, not public mutable fields.
 - Return new values instead of mutating arguments.
 - Keep functions free of side effects beyond their return value unless the side effect is their purpose (logging, I/O), so the same inputs always give the same output.
+
+## Comments
+- Write a comment only when the code would be unclear or misleading without it, and match the length of the comments around it (often a one-line doc summary). Long comments bury the few that matter and drift from the code.

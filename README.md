@@ -38,3 +38,17 @@ Add these lines to `~/.claude/CLAUDE.md`:
 ### Other harnesses
 
 Add an instruction to the harness's user-level instructions file (for example `~/.codex/AGENTS.md`, or Copilot's custom instructions): "At the start of every session, read `<repo>/VARS.md`, `<repo>/src/core.md` and `<repo>/src/index.md`, and follow `core.md`."
+
+## Contributing
+
+This is an early experiment, and contributions are welcome. Some useful ways to help:
+
+- Try the setup with an assistant other than Kiro, and report what works and what doesn't. Only the Kiro setup has been tested so far.
+- Open an issue when the memory behaves in a way you didn't expect, for example when the AI records a lesson it shouldn't, or misses one it should.
+- Suggest a lesson for the shared memory files in `src/`. Include the reason the lesson matters; lessons without a reason are left out.
+
+Please open an issue to discuss any change to `src/core.md` before sending a pull request. That file defines how the whole memory works, so changes to it are kept small and made with care.
+
+## License
+
+MIT. See `LICENSE`.
