@@ -9,7 +9,7 @@ A lesson is anything that would change how you act in a future task. For example
 - you made a mistake and found its cause
 - a tool, language, library or codebase behaved in a way you didn't expect
 
-When what you did matched what was expected, there is usually nothing to record. If there is nothing to record, reply with exactly the three lines in the block below and nothing else. Otherwise, start your reply with the same first two lines, then `**[core learn]** <the change you propose, in a few words>`. The first line holds only a zero-width space (U+200B). Kiro joins this reply onto the end of the previous one and drops leading blank lines, so that invisible character is what keeps the blank line, and the blank line puts `[core learn]` on its own line.
+When what you did matched what was expected, there is usually nothing to record. If there is nothing to record, reply with exactly the three lines in the block below and nothing else. Otherwise, start your reply with the same first two lines, then `**[core learn]** <the change you propose, in a few words>`. The first line holds only a zero-width space (U+200B). Kiro joins this reply onto the end of the previous one and drops leading blank lines, so that invisible character is what keeps the blank line, and the blank line puts `[core learn]` on its own line. Write a `[core learn]` line only in a reply to this instruction, never in a main reply.
 
 ```
 ​
