@@ -1,9 +1,7 @@
 "use strict";
-// PostToolUse on read and shell tools: records today as a used date for every memory file the tool read.
+// PostToolUse on the read tool: records today as a used date for every memory file the tool read.
 const fs = require("fs");
 const lib = require("./lib");
-
-const MEMORY_PATH = /memory\/(short-term|long-term)\/([a-z0-9][a-z0-9-]*)\.md/g;
 
 const collectStrings = (value) =>
   typeof value === "string"
@@ -12,18 +10,26 @@ const collectStrings = (value) =>
       ? Object.values(value).flatMap(collectStrings)
       : [];
 
+// A path counts only if it is exactly a memory file, through the ~/.kiro link or the repo itself.
+const realRoot = fs.realpathSync(lib.ROOT);
+const memoryByPath = new Map(
+  lib.listMemories().flatMap((memory) => [
+    [memory.file, memory],
+    [memory.file.replace(lib.ROOT, realRoot), memory],
+  ]),
+);
+
 const input = lib.readStdinJson();
 lib.debugLog("PostToolUse", input);
 const activity = lib.readActivity();
-const toolInput = input.tool_input || {};
-const isShell = typeof toolInput.command === "string";
+// A refused or failed read returns no file content, so a read counts only if the response shows the file's topic line.
+const response = collectStrings(input.tool_response).join("\n");
 
 if (!(activity.reviewing_session && activity.reviewing_session === input.session_id)) {
   const date = lib.todayUtc();
-  const readSources = isShell ? [toolInput.command].filter((command) => /^\s*cat\s/.test(command)) : collectStrings(toolInput);
-  const usedMemories = readSources
-    .flatMap((source) => [...source.matchAll(MEMORY_PATH)].map((match) => ({ tier: match[1], topic: match[2] })))
-    .filter(({ tier, topic }) => fs.existsSync(lib.memoryFile(tier, topic)));
+  const usedMemories = [...new Set(collectStrings(input.tool_input || {}).map((source) => memoryByPath.get(source)))]
+    .filter(Boolean)
+    .filter((memory) => response.includes(`Topic: ${lib.topicLine(memory.file)}`));
   if (usedMemories.length > 0) {
     lib.writeActivity(lib.withActiveDate(activity, date));
     usedMemories.forEach(({ tier, topic }) => lib.recordUse(tier, topic, date));

@@ -3,7 +3,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-// setup-kiro.sh links ~/.kiro/ai-memory to this repo, so every path the hooks print stays the same wherever the repo is cloned.
+// setup-kiro.sh links ~/.kiro/ai-memory to the repo, so every path the hooks use and print is under ~/.kiro.
 const ROOT = path.join(os.homedir(), ".kiro", "ai-memory");
 const MEMORY_DIR = path.join(ROOT, "memory");
 const STATS_DIR = path.join(ROOT, "stats");
@@ -61,9 +61,10 @@ function keepLatest(dates, max) {
 }
 
 function readActivity() {
-  const activity = readJson(ACTIVITY_FILE, {});
+  const activity = readJson(ACTIVITY_FILE, {}) || {};
+  const activeDates = Array.isArray(activity.active_dates) ? activity.active_dates : [];
   return {
-    active_dates: keepLatest(activity.active_dates || [], MAX_ACTIVE_DATES),
+    active_dates: keepLatest(activeDates, MAX_ACTIVE_DATES),
     last_consolidated: DATE_FORMAT.test(activity.last_consolidated || "") ? activity.last_consolidated : null,
     reviewing_session: activity.reviewing_session || null,
   };
@@ -110,7 +111,8 @@ function listMemories() {
 }
 
 function readUsedDates(tier, topic) {
-  return keepLatest(readJson(statFile(tier, topic), { used_dates: [] }).used_dates || [], MAX_USED_DATES);
+  const stat = readJson(statFile(tier, topic), null);
+  return Array.isArray(stat?.used_dates) ? keepLatest(stat.used_dates, MAX_USED_DATES) : [];
 }
 
 function writeUsedDates(tier, topic, usedDates) {
@@ -121,10 +123,11 @@ function recordUse(tier, topic, date) {
   writeUsedDates(tier, topic, [...readUsedDates(tier, topic), date]);
 }
 
-// A new memory starts as used today, which gives it the full grace period before removal.
+// A new memory, or one whose stat file is missing, corrupt or holds no valid date, starts as used today,
+// which gives it the full grace period before removal.
 function syncStats(date) {
   listMemories()
-    .filter(({ tier, topic }) => !fs.existsSync(statFile(tier, topic)))
+    .filter(({ tier, topic }) => readUsedDates(tier, topic).length === 0)
     .forEach(({ tier, topic }) => writeUsedDates(tier, topic, [date]));
   TIERS.forEach((tier) =>
     listTopics(path.join(STATS_DIR, tier), ".stat.json")

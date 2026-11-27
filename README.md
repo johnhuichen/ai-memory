@@ -7,7 +7,7 @@ A self-evolving memory for Kiro CLI. Kiro records what it learns in memory files
 Requirements: Kiro CLI 3.6 or later on the V3 engine, and Node.js 18 or later on `PATH`.
 
 1. Clone this repo anywhere, for example `~/Code/ai-memory`.
-2. Run `./setup-kiro.sh`. It links `~/.kiro/ai-memory` to the repo and `~/.kiro/hooks/ai-memory.json` to the repo's hook file, which installs the hooks for every workspace. It writes no memory files; memories and stats stay in the repo.
+2. Run `./setup-kiro.sh`. It links `~/.kiro/ai-memory` to the repo, so everything ai-memory uses is reachable under `~/.kiro`, and writes `~/.kiro/hooks/ai-memory.json`, which installs the hooks for every workspace. Memories and stats stay in the repo. Kiro skips hook files that are symlinks, so setup writes the hook file instead of linking it: run setup again after moving the repo or changing `hooks/ai-memory.json`. Changes to the scripts and core files take effect without it.
 3. Start a new Kiro session. Sessions load hooks when they start.
 
 ## Layout
@@ -24,7 +24,7 @@ All dates are UTC, in `YYYY-MM-DD` format. An active date is a date on which you
 | Hook | Script | What it does |
 |---|---|---|
 | `UserPromptSubmit` | `on-prompt.js` | Adds today to the active dates, then injects `core/recall.md` and an index of every memory file. |
-| `PostToolUse` | `on-read.js` | When Kiro reads a memory file with a read tool or `cat`, adds today to that memory's used dates. |
+| `PostToolUse` | `on-read.js` | When Kiro reads a memory file with the read tool, at its exact path, adds today to that memory's used dates. |
 | `Stop` | `on-stop.js` | Runs consolidation at most once a day, then returns `{"decision": "block"}` with `core/learn.md`, and the consolidation report and `core/consolidate.md` when consolidation ran. Kiro then runs a follow-up that acts on them. |
 
 Consolidation rules:
