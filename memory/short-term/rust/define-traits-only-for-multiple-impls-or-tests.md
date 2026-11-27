@@ -1,5 +1,5 @@
-> Memory: Define a Rust trait only when the abstraction is useful: several implementations, or testability.
+> Memory: Define a Rust trait only when the abstraction is useful: several implementations, testability, or an architectural boundary where the implementation may change.
 
-Define a trait when the abstraction is useful (multiple implementations, or testability), and implement it on a concrete struct. Skip the trait when there is only one implementation and no swap is anticipated. A trait with one implementation adds a layer the reader must follow, for no benefit.
+Define a trait when the abstraction is useful (multiple implementations, or testability), and implement it on a concrete struct. Use traits at architectural boundaries where the implementation may change (data sources, storage backends, external services), so swapping means providing a new concrete type. Skip the trait when there is only one implementation and no swap is anticipated. A trait with one implementation adds a layer the reader must follow, for no benefit.
 
-Example: a `Formatter` trait whose only implementation is `DefaultFormatter`, which tests never replace, should just be the `DefaultFormatter` struct.
+Example: `trait PriceSource { fn price(&self, ticker: &str) -> Result<f64>; }`, implemented by `YahooPriceSource` in production and `FixedPriceSource` in tests, earns its place: moving to another data provider means writing one new struct. A `Formatter` trait whose only implementation is `DefaultFormatter`, which tests never replace, should just be the `DefaultFormatter` struct.
