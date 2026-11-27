@@ -35,13 +35,13 @@ Consolidation rules, applied by the script without asking:
 |---|---|
 | Promote a short-term memory | It was used on each of the last 5 active dates |
 | Remove a short-term memory | It has 14 or more idle dates |
-| Remove a long-term memory | It has 30 or more idle dates |
+| Remove a long-term memory | It has 360 or more idle dates |
 
 After the script runs, Kiro reviews all memories and merges duplicates and fixes memories that break the writing rules, without asking. It keeps every rule the memories state, and lists each change so you can check it in git. New lessons are also written without asking, and shown to you after.
 
 ### Why the date lists stay short
 
-- `activity.json` keeps the last 30 active dates, the largest threshold above. A memory last used before the oldest of those 30 dates already has 30 or more active dates after it, so dates further back never change a decision.
+- `activity.json` keeps the last 360 active dates, the largest threshold above. A memory last used before the oldest of those 360 dates already has 360 or more active dates after it, so dates further back never change a decision.
 - Each stat file keeps the last 5 used dates. Promotion needs a use on each of the last 5 active dates, and those are the 5 most recent dates, so older uses can't count. Removal only needs the latest use.
 
 ### Debugging
