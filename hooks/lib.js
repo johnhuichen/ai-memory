@@ -10,6 +10,7 @@ const ROOT = path.join(os.homedir(), ".kiro", "ai-memory");
 const MEMORY_DIR = path.join(ROOT, "memory");
 const STATS_DIR = path.join(ROOT, "stats");
 const ACTIVITY_FILE = path.join(STATS_DIR, "activity.json");
+const REPORT_FILE = path.join(STATS_DIR, "consolidation-report.md");
 const TIERS = ["long-term", "short-term"];
 const INDEX_FILE = "index.json";
 const STAT_SUFFIX = ".stat.json";
@@ -154,6 +155,43 @@ function readTierIndex(tier) {
   return Array.isArray(index?.topics) ? index.topics.filter((entry) => NAME_FORMAT.test(entry?.topic || "")) : [];
 }
 
+function isValidIndex(file, key) {
+  return Array.isArray(readJson(file, null)?.[key]);
+}
+
+// Lists every way the indexes disagree with the memory files. The script never repairs them, so the user can
+// see how they got that way.
+function indexProblems() {
+  return TIERS.flatMap((tier) => {
+    const tierIndexValid = !fs.existsSync(tierIndexFile(tier)) || isValidIndex(tierIndexFile(tier), "topics");
+    const topicDirs = listDirs(tierDir(tier));
+    const indexedTopics = readTierIndex(tier).map((entry) => entry.topic);
+    return [
+      ...(tierIndexValid ? [] : [`${tier}/index.json can't be parsed or has no "topics" list`]),
+      ...topicDirs.filter((topic) => tierIndexValid && !indexedTopics.includes(topic)).map((topic) => `${tier}/${topic}: folder has no entry in ${tier}/index.json`),
+      ...indexedTopics.filter((topic) => !topicDirs.includes(topic)).map((topic) => `${tier}/index.json lists ${topic}, which has no folder`),
+      ...topicDirs.flatMap((topic) => {
+        if (!isValidIndex(topicIndexFile(tier, topic), "memories")) return [`${tier}/${topic}/index.json is missing, can't be parsed or has no "memories" list`];
+        const files = listNames(topicDir(tier, topic), ".md").map((name) => `${name}.md`);
+        const indexedFiles = readTopicIndex(tier, topic).map((entry) => entry.file);
+        return [
+          ...files.filter((file) => !indexedFiles.includes(file)).map((file) => `${tier}/${topic}/${file}: no entry in its index.json`),
+          ...indexedFiles.filter((file) => !files.includes(file)).map((file) => `${tier}/${topic}/index.json lists ${file}, which doesn't exist`),
+        ];
+      }),
+    ];
+  });
+}
+
+// True when every index file the script would rewrite to promote or remove this memory can be parsed.
+function canUpdateIndexes({ topic }) {
+  return TIERS.every(
+    (tier) =>
+      (!fs.existsSync(tierIndexFile(tier)) || isValidIndex(tierIndexFile(tier), "topics")) &&
+      (!fs.existsSync(topicIndexFile(tier, topic)) || isValidIndex(topicIndexFile(tier, topic), "memories")),
+  );
+}
+
 function readUsedDates(memory) {
   const stat = readJson(statFile(memory), null);
   return Array.isArray(stat?.used_dates) ? keepLatest(stat.used_dates, MAX_USED_DATES) : [];
@@ -187,47 +225,38 @@ function syncStats(date) {
   });
 }
 
-// Rewrites every index.json from the files on disk: a topic folder without memories is deleted, and a topic
-// keeps the description the AI wrote for it, taken from the other tier when this tier has none.
-function syncIndexes() {
-  const descriptions = Object.fromEntries(
-    TIERS.map((tier) => [
-      tier,
-      new Map(
-        readTierIndex(tier)
-          .filter((entry) => typeof entry.description === "string" && entry.description.trim() !== "")
-          .map((entry) => [entry.topic, entry.description.trim()]),
-      ),
-    ]),
-  );
-  TIERS.forEach((tier) => {
-    const otherTier = TIERS.find((candidate) => candidate !== tier);
-    const topics = listDirs(tierDir(tier)).filter((topic) => {
-      if (listNames(topicDir(tier, topic), ".md").length > 0) return true;
-      fs.rmSync(topicIndexFile(tier, topic), { force: true });
-      if (entries(topicDir(tier, topic)).length === 0) fs.rmdirSync(topicDir(tier, topic));
-      return false;
-    });
-    topics.forEach((topic) =>
-      writeJson(topicIndexFile(tier, topic), {
-        memories: listNames(topicDir(tier, topic), ".md").map((name) => ({
-          file: `${name}.md`,
-          memory: memoryLine(memoryFile({ tier, topic, name })) || "",
-        })),
-      }),
-    );
-    writeJson(tierIndexFile(tier), {
-      topics: topics.map((topic) => ({
-        topic,
-        description: descriptions[tier].get(topic) || descriptions[otherTier].get(topic) || "",
-      })),
-    });
-  });
+// The AI adds index entries when it writes a memory. The script changes indexes only when it promotes or removes
+// a memory: it moves or drops that memory's entry, and never rewrites a description.
+function readTopicIndex(tier, topic) {
+  const index = readJson(topicIndexFile(tier, topic), null);
+  return Array.isArray(index?.memories) ? index.memories.filter((entry) => typeof entry?.file === "string") : [];
 }
 
-function sync(date) {
-  syncStats(date);
-  syncIndexes();
+function writeTopicIndex(tier, topic, memories) {
+  writeJson(topicIndexFile(tier, topic), { memories });
+}
+
+function writeTierIndex(tier, topics) {
+  writeJson(tierIndexFile(tier), { topics });
+}
+
+// Drops a memory's entry from its topic index. A topic left without memory files loses its index file, its
+// folder when nothing else is in it, and its entry in the tier index.
+function removeIndexEntry({ tier, topic, name }) {
+  if (listNames(topicDir(tier, topic), ".md").length > 0) {
+    writeTopicIndex(tier, topic, readTopicIndex(tier, topic).filter((entry) => entry.file !== `${name}.md`));
+    return;
+  }
+  fs.rmSync(topicIndexFile(tier, topic), { force: true });
+  if (entries(topicDir(tier, topic)).length === 0) fs.rmdirSync(topicDir(tier, topic));
+  writeTierIndex(tier, readTierIndex(tier).filter((entry) => entry.topic !== topic));
+}
+
+// Adds a memory's entry to its topic index, and adds topicEntry to the tier index when the topic is new there.
+function addIndexEntry({ tier, topic }, memoryEntry, topicEntry) {
+  writeTopicIndex(tier, topic, [...readTopicIndex(tier, topic).filter((entry) => entry.file !== memoryEntry.file), memoryEntry]);
+  const topics = readTierIndex(tier);
+  if (!topics.some((entry) => entry.topic === topic)) writeTierIndex(tier, [...topics, topicEntry]);
 }
 
 function idleDates(activeDates, usedDates) {
@@ -248,27 +277,26 @@ function consolidationAction(tier, activeDates, usedDates) {
   return usedOnEveryRecentDate ? "promote" : null;
 }
 
-function renderCore(name) {
-  return fs.readFileSync(path.join(ROOT, "core", `${name}.md`), "utf8").trimEnd();
-}
-
-// The core files refer to these names, so the same text works wherever ai-memory is installed.
-function renderPaths() {
+// The variables the core files and hook instructions refer to, so the same text works wherever ai-memory is installed.
+function renderVariables() {
   const paths = {
     SHORT_TERM: tierDir("short-term"),
     LONG_TERM: tierDir("long-term"),
     CORE: path.join(ROOT, "core"),
     HOOKS: path.join(ROOT, "hooks"),
+    STATS: STATS_DIR,
   };
   return ["# ai-memory: paths", ...Object.entries(paths).map(([name, value]) => `- <${name}>: ${value}`)].join("\n");
 }
 
+// Every hook injects its text through this, so each one carries the variables its text uses.
+function renderInjection(title, text) {
+  return `${renderVariables()}\n\n# ai-memory: ${title}\n\n${text}\n`;
+}
+
 module.exports = {
   ROOT,
-  TIERS,
   PROMOTE_AFTER_ACTIVE_DATES,
-  REMOVE_SHORT_TERM_AFTER_IDLE_DATES,
-  REMOVE_LONG_TERM_AFTER_IDLE_DATES,
   todayUtc,
   readStdinJson,
   debugLog,
@@ -276,18 +304,22 @@ module.exports = {
   writeActivity,
   withActiveDate,
   topicDir,
-  topicIndexFile,
   memoryFile,
   statFile,
   listMemories,
   memoryLine,
   readTierIndex,
+  indexProblems,
+  canUpdateIndexes,
+  readTopicIndex,
+  removeIndexEntry,
+  addIndexEntry,
   readUsedDates,
   writeUsedDates,
   recordUse,
-  sync,
+  syncStats,
   idleDates,
   consolidationAction,
-  renderCore,
-  renderPaths,
+  REPORT_FILE,
+  renderInjection,
 };

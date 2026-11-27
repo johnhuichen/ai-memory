@@ -17,10 +17,6 @@
       "memory": "To delete Kiro conversations safely, back up the database first, then vacuum and check integrity."
     },
     {
-      "file": "read-tool-refuses-ignored-paths.md",
-      "memory": "On the v3 engine, Kiro's read tool refuses paths that match git's global ignore file."
-    },
-    {
       "file": "resources-globs-not-recursive.md",
       "memory": "Agent `resources` globs like `dir/*.md` match only that directory, not subdirectories."
     }
