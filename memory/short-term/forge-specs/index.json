@@ -1,0 +1,8 @@
+{
+  "memories": [
+    {
+      "file": "bundle-related-changes.md",
+      "memory": "Put small, conceptually related changes in one forge spec, even across repos."
+    }
+  ]
+}

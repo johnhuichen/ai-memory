@@ -13,29 +13,29 @@ Requirements: Kiro CLI 3.6 or later on the V3 engine, and Node.js 18 or later on
 ## Layout
 
 - `core/` holds the rules the hooks inject: `recall.md`, `learn.md` and `consolidate.md`.
-- `memory/short-term/` and `memory/long-term/` hold the memory files, one per topic. Each file starts with `> Topic: <the topic in one line>`.
-- `stats/` holds dates that the scripts read and write: `activity.json`, and one `<topic>.stat.json` per memory.
+- `memory/short-term/` and `memory/long-term/` hold the memories. A memory is one file holding one lesson, at `memory/<tier>/<topic>/<name>.md`, and its first line is `> Memory: <the rule in one line>`. Each tier's `index.json` lists its topics with a description, and each topic's `index.json` lists its memories. The scripts rewrite both from the files on every prompt; the AI only writes the description of a new topic.
+- `stats/` holds dates that the scripts read and write: `activity.json`, and `stats/<tier>/<topic>/<name>.stat.json` for each memory.
 - `hooks/` holds the hook definitions and their Node scripts.
 
 ## How it works
 
-All dates are UTC, in `YYYY-MM-DD` format. An active date is a date on which you sent Kiro a message. A memory's used dates are the dates on which Kiro read its file.
+All dates are UTC, in `YYYY-MM-DD` format. An active date is a date on which you sent Kiro a message. A memory's used dates are the dates on which Kiro read its file. Its idle dates are the active dates after its last use.
 
 | Hook | Script | What it does |
 |---|---|---|
-| `UserPromptSubmit` | `on-prompt.js` | Adds today to the active dates, then injects `core/recall.md` and an index of every memory file. |
-| `PostToolUse` | `on-read.js` | When Kiro reads a memory file with the read tool, at its exact path, adds today to that memory's used dates. |
-| `Stop` | `on-stop.js` | Runs consolidation at most once a day, then returns `{"decision": "block"}` with `core/learn.md`, and the consolidation report and `core/consolidate.md` when consolidation ran. Kiro then runs a follow-up that acts on them. |
+| `UserPromptSubmit` | `on-prompt.js` | Adds today to the active dates, syncs stats and indexes, then injects `core/recall.md` and each tier's topic index. |
+| `PostToolUse` | `on-read.js` | When Kiro reads a memory file with the read tool, at its exact path, adds today to that memory's used dates. Index reads don't count. |
+| `Stop` | `on-stop.js` | Once a day, promotes and removes memories by the rules below. Then returns `{"decision": "block"}` with `core/learn.md`, plus the consolidation report and `core/consolidate.md` on the first Stop of the day. Kiro then runs a follow-up that acts on them. |
 
-Consolidation rules:
+Consolidation rules, applied by the script without asking:
 
-| Rule | Condition | Approval |
-|---|---|---|
-| Promote a short-term memory | It was used on each of the last 5 active dates | Not needed |
-| Remove a short-term memory | 14 or more active dates came after its last use | Not needed |
-| Remove a long-term memory | 30 or more active dates came after its last use | Kiro asks you |
+| Rule | Condition |
+|---|---|
+| Promote a short-term memory | It was used on each of the last 5 active dates |
+| Remove a short-term memory | It has 14 or more idle dates |
+| Remove a long-term memory | It has 30 or more idle dates |
 
-New lessons and edits from the daily review always wait for your approval.
+New lessons, and the merges and edits the daily review proposes, always wait for your approval.
 
 ### Why the date lists stay short
 

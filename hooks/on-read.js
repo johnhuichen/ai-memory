@@ -1,5 +1,5 @@
 "use strict";
-// PostToolUse on the read tool: records today as a used date for every memory file the tool read.
+// PostToolUse on the read tool: records today as a used date for every memory the tool read. Index reads don't count.
 const fs = require("fs");
 const lib = require("./lib");
 
@@ -22,16 +22,19 @@ const memoryByPath = new Map(
 const input = lib.readStdinJson();
 lib.debugLog("PostToolUse", input);
 const activity = lib.readActivity();
-// A refused or failed read returns no file content, so a read counts only if the response shows the file's topic line.
+// A refused or failed read returns no file content, so a read counts only if the response shows the memory's first line.
 const response = collectStrings(input.tool_response).join("\n");
 
 if (!(activity.reviewing_session && activity.reviewing_session === input.session_id)) {
   const date = lib.todayUtc();
   const usedMemories = [...new Set(collectStrings(input.tool_input || {}).map((source) => memoryByPath.get(source)))]
     .filter(Boolean)
-    .filter((memory) => response.includes(`Topic: ${lib.topicLine(memory.file)}`));
+    .filter((memory) => {
+      const line = lib.memoryLine(memory.file);
+      return line !== null && response.includes(`Memory: ${line}`);
+    });
   if (usedMemories.length > 0) {
     lib.writeActivity(lib.withActiveDate(activity, date));
-    usedMemories.forEach(({ tier, topic }) => lib.recordUse(tier, topic, date));
+    usedMemories.forEach((memory) => lib.recordUse(memory, date));
   }
 }

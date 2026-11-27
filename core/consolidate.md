@@ -1,12 +1,11 @@
 # ai-memory: consolidate
 
-This runs at most once a day. The report above lists what the hook script already changed and what is left for you. Do these steps after the learn step:
+This runs once a day. The script has already promoted and removed memories by how recently they were used, and the report above lists what it changed. Do these steps after the learn step:
 
-1. Start with a line `---`, then `**[core consolidate]** <what changed, and what needs the user's approval, in a few words>`. Then list what the script promoted to long-term and removed from short-term. If the report lists nothing, say so in one line.
-2. For each merge task, merge the short-term file into the long-term file, keeping each lesson once, then delete the short-term file. This needs no approval.
-3. For each long-term memory the report lists as unused, ask the user whether to delete it. If they say yes, delete the file. If they say no, run `node {{ROOT}}/hooks/on-stop.js --keep long-term/<topic>`, so the memory counts as used today and isn't raised again for a while.
-4. Review every memory file, and the core files in `{{ROOT}}/core/`. Remove lessons that are no longer useful, shorten lessons without losing information or making them harder to read, correct what is wrong, and merge lessons that repeat each other, also across files. Propose these edits and wait for the user's approval before applying them. Keep changes to core files as small as they can be.
+1. After a blank line, put `**[core consolidate]** <what the script changed, and what you propose, in a few words>` on its own line. Then copy the report's promoted and removed lists exactly as the script wrote them, each line with its reason. If both are empty, say so in one line.
+2. Read the `index.json` of every topic in `<LONG_TERM>` and `<SHORT_TERM>`, and the core files in `<CORE>`. Propose merging memories that repeat each other, also across topics and tiers and including any pair the report lists as not promoted, shortening memories without losing information or making them harder to read, and correcting what is wrong. Read a memory file only when its index line suggests one of these edits. To merge, keep one memory file and delete the others. Wait for the user's approval before applying any edit, and keep changes to core files as small as they can be.
+3. For each topic the report lists without a description, add one to that tier's `index.json`.
 
-Reads of memory files from now until the user's next message don't count as use, so this review doesn't keep stale memories alive.
+Reads of memory files from now until the user's next message don't count as use, so this review doesn't keep unused memories alive.
 
 Why: the context window is valuable. With too little written, a lesson isn't stored well enough to use. With too much, the important lessons get lost. Reviewing keeps memory at that balance.

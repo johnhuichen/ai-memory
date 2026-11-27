@@ -1,0 +1,8 @@
+{
+  "memories": [
+    {
+      "file": "report-rule-conflicts.md",
+      "memory": "When two rules conflict, report it: name both rules, and say which one you followed and why."
+    }
+  ]
+}

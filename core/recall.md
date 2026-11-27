@@ -1,9 +1,5 @@
 # ai-memory: recall
 
-This text comes from the user's ai-memory hook, which runs on every message. Memory holds lessons from past sessions. Reading the relevant ones before you start lets you apply them.
+Memory holds lessons from past sessions, one lesson per memory file, grouped in topics. The index below lists each topic's `index.json`, which lists the topic's memories. Before you work on this message, read the `index.json` of each topic that relates to it, then each memory that applies, with the read tool at its exact path. A hook counts only reads of memory files as use.
 
-- Before you work on this message, read every memory file in the index below whose topic relates to it: its language, tools, codebase or kind of work. If you are unsure whether a file is relevant, read it. A message that needs no work, such as "thanks", needs no memories.
-- Read memory files with the file read tool, using the exact path from the index. A hook records these reads to track which memories are in use, and it sees no other way of reading.
-- Whenever you learn something that changes what the task involves, check the index again.
-- Long-term memories have proved useful over many days. Short-term memories are newer.
-- Start your reply with `**[core recall]** <topics you read, or none>`, so the user sees which memories shaped the answer.
+Start your reply with `**[core recall]** <topic/memory names you read>`, or only `**[core recall]** none`.

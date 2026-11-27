@@ -1,0 +1,12 @@
+{
+  "memories": [
+    {
+      "file": "traits-at-boundaries.md",
+      "memory": "Use Rust traits at architectural boundaries where the implementation may change."
+    },
+    {
+      "file": "traits-when-useful.md",
+      "memory": "Define a Rust trait only when the abstraction is useful: several implementations, or testability."
+    }
+  ]
+}

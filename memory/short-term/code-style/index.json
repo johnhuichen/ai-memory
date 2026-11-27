@@ -1,0 +1,32 @@
+{
+  "memories": [
+    {
+      "file": "comments-only-when-needed.md",
+      "memory": "Don't add a comment when a reader can understand the code without it."
+    },
+    {
+      "file": "immutability-and-pure-functions.md",
+      "memory": "Prefer immutable data and pure functions by default."
+    },
+    {
+      "file": "name-functions-by-effect.md",
+      "memory": "Name functions and methods after what they do, not how they do it."
+    },
+    {
+      "file": "name-variables-by-contents.md",
+      "memory": "Name variables after what they contain, not their type or a shortened alias."
+    },
+    {
+      "file": "names-explain-themselves.md",
+      "memory": "Name things so a reader understands what they hold without reading surrounding code."
+    },
+    {
+      "file": "reuse-name-for-copies.md",
+      "memory": "For an owned copy or a rebinding, reuse the same name."
+    },
+    {
+      "file": "universal-abbreviations-only.md",
+      "memory": "Use abbreviations only when universally understood, such as `url`, `id`, or `i` for a loop index."
+    }
+  ]
+}

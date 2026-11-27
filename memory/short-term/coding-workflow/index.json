@@ -1,0 +1,72 @@
+{
+  "memories": [
+    {
+      "file": "ask-even-after-many-rounds.md",
+      "memory": "Ask whenever you are unsure, even after many rounds of questions."
+    },
+    {
+      "file": "caution-over-speed.md",
+      "memory": "Favor caution over speed when writing or changing code; for trivial tasks, use judgment."
+    },
+    {
+      "file": "change-only-what-is-needed.md",
+      "memory": "Change only what the request needs, and match the existing style."
+    },
+    {
+      "file": "design-at-domain-level.md",
+      "memory": "When proposing a design or code change, stay at the level of the domain model."
+    },
+    {
+      "file": "edit-one-at-a-time.md",
+      "memory": "Make code edits one at a time with the edit tool, not with a script that rewrites several files."
+    },
+    {
+      "file": "leave-adjacent-code.md",
+      "memory": "Leave adjacent code, comments, formatting and working code as they are."
+    },
+    {
+      "file": "minimum-code.md",
+      "memory": "Write the minimum code that solves the problem."
+    },
+    {
+      "file": "non-interactive-assumptions.md",
+      "memory": "In a non-interactive run, state the assumption you chose and proceed."
+    },
+    {
+      "file": "plan-with-checks.md",
+      "memory": "For multi-step tasks, state a brief plan with a check per step."
+    },
+    {
+      "file": "present-interpretations.md",
+      "memory": "When a request has several interpretations, present them instead of picking one silently."
+    },
+    {
+      "file": "remove-own-unused-code.md",
+      "memory": "Remove imports, variables and functions that your own changes made unused."
+    },
+    {
+      "file": "rewrite-overcomplicated-code.md",
+      "memory": "If the code could be far shorter, rewrite it."
+    },
+    {
+      "file": "state-assumptions.md",
+      "memory": "Before coding, state your assumptions explicitly, and ask when uncertain."
+    },
+    {
+      "file": "stay-on-task.md",
+      "memory": "Stay on the task the user set, and raise side concerns after it is done."
+    },
+    {
+      "file": "stop-and-ask-when-unclear.md",
+      "memory": "When something is unclear, stop, name what is confusing, and ask."
+    },
+    {
+      "file": "suggest-simpler-approach.md",
+      "memory": "When a simpler approach exists, say so, and push back when warranted."
+    },
+    {
+      "file": "verifiable-goals.md",
+      "memory": "Turn each task into a verifiable goal before starting."
+    }
+  ]
+}

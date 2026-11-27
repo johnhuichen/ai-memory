@@ -4,22 +4,24 @@ const os = require("os");
 const path = require("path");
 
 // setup-kiro.sh links ~/.kiro/ai-memory to the repo, so every path the hooks use and print is under ~/.kiro.
+// Layout: memory/<tier>/index.json lists the tier's topics, memory/<tier>/<topic>/index.json lists the topic's
+// memories, and memory/<tier>/<topic>/<name>.md is one memory holding one lesson. Stats mirror the memory files.
 const ROOT = path.join(os.homedir(), ".kiro", "ai-memory");
 const MEMORY_DIR = path.join(ROOT, "memory");
 const STATS_DIR = path.join(ROOT, "stats");
 const ACTIVITY_FILE = path.join(STATS_DIR, "activity.json");
 const TIERS = ["long-term", "short-term"];
+const INDEX_FILE = "index.json";
+const STAT_SUFFIX = ".stat.json";
+const NAME_FORMAT = /^[a-z0-9][a-z0-9-]*$/;
+const MEMORY_LINE = /^>\s*Memory:\s*(.+)$/;
 const DEBUG_FLAG = "/tmp/ai-memory-debug";
 const DEBUG_LOG = "/tmp/ai-memory-debug.log";
 
 const PROMOTE_AFTER_ACTIVE_DATES = 5;
-const REMOVE_SHORT_TERM_AFTER_ACTIVE_DATES = 14;
-const REMOVE_LONG_TERM_AFTER_ACTIVE_DATES = 30;
-const MAX_ACTIVE_DATES = Math.max(
-  PROMOTE_AFTER_ACTIVE_DATES,
-  REMOVE_SHORT_TERM_AFTER_ACTIVE_DATES,
-  REMOVE_LONG_TERM_AFTER_ACTIVE_DATES,
-);
+const REMOVE_SHORT_TERM_AFTER_IDLE_DATES = 14;
+const REMOVE_LONG_TERM_AFTER_IDLE_DATES = 30;
+const MAX_ACTIVE_DATES = Math.max(PROMOTE_AFTER_ACTIVE_DATES, REMOVE_SHORT_TERM_AFTER_IDLE_DATES, REMOVE_LONG_TERM_AFTER_IDLE_DATES);
 const MAX_USED_DATES = PROMOTE_AFTER_ACTIVE_DATES;
 
 // Every stored date is a UTC date in YYYY-MM-DD format. Anything else is dropped, so sorting and comparing dates as strings stays correct.
@@ -78,77 +80,167 @@ function withActiveDate(activity, date) {
   return { ...activity, active_dates: keepLatest([...activity.active_dates, date], MAX_ACTIVE_DATES) };
 }
 
-function memoryFile(tier, topic) {
-  return path.join(MEMORY_DIR, tier, `${topic}.md`);
+function tierDir(tier) {
+  return path.join(MEMORY_DIR, tier);
 }
 
-function statFile(tier, topic) {
-  return path.join(STATS_DIR, tier, `${topic}.stat.json`);
+function tierIndexFile(tier) {
+  return path.join(tierDir(tier), INDEX_FILE);
 }
 
-function listTopics(dir, suffix) {
+function topicDir(tier, topic) {
+  return path.join(tierDir(tier), topic);
+}
+
+function topicIndexFile(tier, topic) {
+  return path.join(topicDir(tier, topic), INDEX_FILE);
+}
+
+// A memory is identified by { tier, topic, name }.
+function memoryFile({ tier, topic, name }) {
+  return path.join(topicDir(tier, topic), `${name}.md`);
+}
+
+function statFile({ tier, topic, name }) {
+  return path.join(STATS_DIR, tier, topic, `${name}${STAT_SUFFIX}`);
+}
+
+function entries(dir) {
   try {
-    return fs.readdirSync(dir).filter((name) => name.endsWith(suffix)).map((name) => name.slice(0, -suffix.length));
+    return fs.readdirSync(dir, { withFileTypes: true });
   } catch {
     return [];
   }
 }
 
-function topicLine(file) {
-  const firstLine = fs.readFileSync(file, "utf8").split("\n", 1)[0];
-  const match = firstLine.match(/^>\s*Topic:\s*(.+)$/);
-  return match ? match[1].trim() : "(no topic line)";
+function listDirs(dir) {
+  return entries(dir)
+    .filter((entry) => entry.isDirectory() && NAME_FORMAT.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
+}
+
+function listNames(dir, suffix) {
+  return entries(dir)
+    .filter((entry) => entry.isFile() && entry.name.endsWith(suffix))
+    .map((entry) => entry.name.slice(0, -suffix.length))
+    .filter((name) => NAME_FORMAT.test(name))
+    .sort();
 }
 
 function listMemories() {
   return TIERS.flatMap((tier) =>
-    listTopics(path.join(MEMORY_DIR, tier), ".md").map((topic) => ({
-      tier,
-      topic,
-      file: memoryFile(tier, topic),
-    })),
+    listDirs(tierDir(tier)).flatMap((topic) =>
+      listNames(topicDir(tier, topic), ".md").map((name) => {
+        const memory = { tier, topic, name };
+        return { ...memory, file: memoryFile(memory) };
+      }),
+    ),
   );
 }
 
-function readUsedDates(tier, topic) {
-  const stat = readJson(statFile(tier, topic), null);
+// Returns the text of the memory's `> Memory:` first line, or null when the file has none or can't be read.
+function memoryLine(file) {
+  try {
+    const match = fs.readFileSync(file, "utf8").split("\n", 1)[0].match(MEMORY_LINE);
+    return match ? match[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function readTierIndex(tier) {
+  const index = readJson(tierIndexFile(tier), null);
+  return Array.isArray(index?.topics) ? index.topics.filter((entry) => NAME_FORMAT.test(entry?.topic || "")) : [];
+}
+
+function readUsedDates(memory) {
+  const stat = readJson(statFile(memory), null);
   return Array.isArray(stat?.used_dates) ? keepLatest(stat.used_dates, MAX_USED_DATES) : [];
 }
 
-function writeUsedDates(tier, topic, usedDates) {
-  writeJson(statFile(tier, topic), { used_dates: keepLatest(usedDates, MAX_USED_DATES) });
+function writeUsedDates(memory, usedDates) {
+  writeJson(statFile(memory), { used_dates: keepLatest(usedDates, MAX_USED_DATES) });
 }
 
-function recordUse(tier, topic, date) {
-  writeUsedDates(tier, topic, [...readUsedDates(tier, topic), date]);
+function recordUse(memory, date) {
+  writeUsedDates(memory, [...readUsedDates(memory), date]);
 }
 
-// A new memory, or one whose stat file is missing, corrupt or holds no valid date, starts as used today,
-// which gives it the full grace period before removal.
+// A memory whose stat file is missing, corrupt or holds no valid date starts as used today, which gives it
+// the full grace period before removal. Stat files without a memory, and empty stat folders, are deleted.
 function syncStats(date) {
-  listMemories()
-    .filter(({ tier, topic }) => readUsedDates(tier, topic).length === 0)
-    .forEach(({ tier, topic }) => writeUsedDates(tier, topic, [date]));
-  TIERS.forEach((tier) =>
-    listTopics(path.join(STATS_DIR, tier), ".stat.json")
-      .filter((topic) => !fs.existsSync(memoryFile(tier, topic)))
-      .forEach((topic) => fs.unlinkSync(statFile(tier, topic))),
+  const memories = listMemories();
+  memories.filter((memory) => readUsedDates(memory).length === 0).forEach((memory) => writeUsedDates(memory, [date]));
+  const statFiles = new Set(memories.map(statFile));
+  TIERS.forEach((tier) => {
+    const tierStatsDir = path.join(STATS_DIR, tier);
+    listNames(tierStatsDir, STAT_SUFFIX).forEach((name) => fs.rmSync(path.join(tierStatsDir, `${name}${STAT_SUFFIX}`)));
+    listDirs(tierStatsDir).forEach((topic) => {
+      const dir = path.join(tierStatsDir, topic);
+      listNames(dir, STAT_SUFFIX)
+        .map((name) => path.join(dir, `${name}${STAT_SUFFIX}`))
+        .filter((file) => !statFiles.has(file))
+        .forEach((file) => fs.rmSync(file));
+      if (entries(dir).length === 0) fs.rmdirSync(dir);
+    });
+  });
+}
+
+// Rewrites every index.json from the files on disk: a topic folder without memories is deleted, and a topic
+// keeps the description the AI wrote for it, taken from the other tier when this tier has none.
+function syncIndexes() {
+  const descriptions = Object.fromEntries(
+    TIERS.map((tier) => [
+      tier,
+      new Map(
+        readTierIndex(tier)
+          .filter((entry) => typeof entry.description === "string" && entry.description.trim() !== "")
+          .map((entry) => [entry.topic, entry.description.trim()]),
+      ),
+    ]),
   );
+  TIERS.forEach((tier) => {
+    const otherTier = TIERS.find((candidate) => candidate !== tier);
+    const topics = listDirs(tierDir(tier)).filter((topic) => {
+      if (listNames(topicDir(tier, topic), ".md").length > 0) return true;
+      fs.rmSync(topicIndexFile(tier, topic), { force: true });
+      if (entries(topicDir(tier, topic)).length === 0) fs.rmdirSync(topicDir(tier, topic));
+      return false;
+    });
+    topics.forEach((topic) =>
+      writeJson(topicIndexFile(tier, topic), {
+        memories: listNames(topicDir(tier, topic), ".md").map((name) => ({
+          file: `${name}.md`,
+          memory: memoryLine(memoryFile({ tier, topic, name })) || "",
+        })),
+      }),
+    );
+    writeJson(tierIndexFile(tier), {
+      topics: topics.map((topic) => ({
+        topic,
+        description: descriptions[tier].get(topic) || descriptions[otherTier].get(topic) || "",
+      })),
+    });
+  });
 }
 
-function activeDatesAfter(activeDates, date) {
-  return activeDates.filter((activeDate) => activeDate > date).length;
+function sync(date) {
+  syncStats(date);
+  syncIndexes();
 }
 
-// Returns "promote", "remove", "ask-remove" or null.
+function idleDates(activeDates, usedDates) {
+  const lastUsed = usedDates[usedDates.length - 1];
+  return activeDates.filter((activeDate) => activeDate > lastUsed).length;
+}
+
+// Returns "promote", "remove" or null.
 function consolidationAction(tier, activeDates, usedDates) {
   if (usedDates.length === 0) return null;
-  const lastUsed = usedDates[usedDates.length - 1];
-  const unusedFor = activeDatesAfter(activeDates, lastUsed);
-  if (tier === "long-term") {
-    return unusedFor >= REMOVE_LONG_TERM_AFTER_ACTIVE_DATES ? "ask-remove" : null;
-  }
-  if (unusedFor >= REMOVE_SHORT_TERM_AFTER_ACTIVE_DATES) return "remove";
+  const idle = idleDates(activeDates, usedDates);
+  if (tier === "long-term") return idle >= REMOVE_LONG_TERM_AFTER_IDLE_DATES ? "remove" : null;
+  if (idle >= REMOVE_SHORT_TERM_AFTER_IDLE_DATES) return "remove";
   const recentActiveDates = activeDates.slice(-PROMOTE_AFTER_ACTIVE_DATES);
   const usedOnEveryRecentDate =
     recentActiveDates.length === PROMOTE_AFTER_ACTIVE_DATES &&
@@ -157,27 +249,45 @@ function consolidationAction(tier, activeDates, usedDates) {
 }
 
 function renderCore(name) {
-  return fs.readFileSync(path.join(ROOT, "core", `${name}.md`), "utf8").replaceAll("{{ROOT}}", ROOT).trimEnd();
+  return fs.readFileSync(path.join(ROOT, "core", `${name}.md`), "utf8").trimEnd();
+}
+
+// The core files refer to these names, so the same text works wherever ai-memory is installed.
+function renderPaths() {
+  const paths = {
+    SHORT_TERM: tierDir("short-term"),
+    LONG_TERM: tierDir("long-term"),
+    CORE: path.join(ROOT, "core"),
+    HOOKS: path.join(ROOT, "hooks"),
+  };
+  return ["# ai-memory: paths", ...Object.entries(paths).map(([name, value]) => `- <${name}>: ${value}`)].join("\n");
 }
 
 module.exports = {
   ROOT,
   TIERS,
-  REMOVE_LONG_TERM_AFTER_ACTIVE_DATES,
+  PROMOTE_AFTER_ACTIVE_DATES,
+  REMOVE_SHORT_TERM_AFTER_IDLE_DATES,
+  REMOVE_LONG_TERM_AFTER_IDLE_DATES,
   todayUtc,
   readStdinJson,
   debugLog,
   readActivity,
   writeActivity,
   withActiveDate,
+  topicDir,
+  topicIndexFile,
   memoryFile,
   statFile,
-  topicLine,
   listMemories,
+  memoryLine,
+  readTierIndex,
   readUsedDates,
   writeUsedDates,
   recordUse,
-  syncStats,
+  sync,
+  idleDates,
   consolidationAction,
   renderCore,
+  renderPaths,
 };

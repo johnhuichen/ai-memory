@@ -1,0 +1,3 @@
+> Memory: When discussing data the user will debug with, show the raw records with their source every time.
+
+When discussing data the user will debug with, show the raw records exactly as the source produced them, with where they came from (file and line), every time a reply refers to them, not only the first time; describing a record without showing it leaves the user unable to check what you say. If you also show a summary your own script produced, label it as yours and say what it left out, because a reformatted value looks like the real data and misleads: printing a JSON event's text field with Python quoting made the event look like a plain string.

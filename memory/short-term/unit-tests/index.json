@@ -1,0 +1,20 @@
+{
+  "memories": [
+    {
+      "file": "find-by-testid.md",
+      "memory": "In tests, find elements only by `data-testid`."
+    },
+    {
+      "file": "mock-child-components.md",
+      "memory": "In a parent component's tests, mock child components and test only the parent's own logic."
+    },
+    {
+      "file": "test-logic-not-looks.md",
+      "memory": "Test behavior that comes from logic, not static text or styling."
+    },
+    {
+      "file": "tests-must-be-able-to-fail.md",
+      "memory": "Make sure each test fails if the code it covers is removed or broken."
+    }
+  ]
+}

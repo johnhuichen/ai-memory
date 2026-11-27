@@ -1,0 +1,28 @@
+{
+  "memories": [
+    {
+      "file": "chat-flags.md",
+      "memory": "`kiro-cli chat` can't disable saving, and `--list-sessions` ignores `--format json`."
+    },
+    {
+      "file": "chat-list-slowdown.md",
+      "memory": "`/chat list` slows down as automated `--no-interactive` runs fill `conversations_v2`."
+    },
+    {
+      "file": "conversation-storage.md",
+      "memory": "Kiro saves conversations per working directory, so `/chat` only lists sessions from the current directory."
+    },
+    {
+      "file": "delete-conversations-safely.md",
+      "memory": "To delete Kiro conversations safely, back up the database first, then vacuum and check integrity."
+    },
+    {
+      "file": "read-tool-refuses-ignored-paths.md",
+      "memory": "On the v3 engine, Kiro's read tool refuses paths that match git's global ignore file."
+    },
+    {
+      "file": "resources-globs-not-recursive.md",
+      "memory": "Agent `resources` globs like `dir/*.md` match only that directory, not subdirectories."
+    }
+  ]
+}

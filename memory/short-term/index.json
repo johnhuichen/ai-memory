@@ -1,0 +1,40 @@
+{
+  "topics": [
+    {
+      "topic": "code-style",
+      "description": "how to write code in any language"
+    },
+    {
+      "topic": "coding-workflow",
+      "description": "how to approach a task that writes or changes code"
+    },
+    {
+      "topic": "communication",
+      "description": "how to write text for people and for other AIs"
+    },
+    {
+      "topic": "forge-specs",
+      "description": "how to write specs for forge"
+    },
+    {
+      "topic": "kiro-cli",
+      "description": "how Kiro CLI works"
+    },
+    {
+      "topic": "rule-conflicts",
+      "description": "what to do when two rules or lessons conflict"
+    },
+    {
+      "topic": "rust",
+      "description": "how to write code in Rust"
+    },
+    {
+      "topic": "unit-tests",
+      "description": "how to write unit tests"
+    },
+    {
+      "topic": "writing-ai-instructions",
+      "description": "how to write prompts, memory files and other instructions for AI"
+    }
+  ]
+}

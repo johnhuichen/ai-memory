@@ -1,0 +1,3 @@
+> Memory: Avoid sentence shapes that make readers stop and decode, and say the plain version.
+
+Watch for sentence shapes that slow readers down: unusual word pairs ("this asymmetry bites"), a subject far from its verb, clauses where the object comes first ("the fix the reviewer flagged"), three or more nouns in a row ("dotfile backup path handling"), nouns used as verbs ("inbox the client"), and code or objects that act like people ("`is_file()` swallows the error"). Say the plain version instead ("`is_file()` returns False without raising an error"), because each of these makes the reader stop and decode.

@@ -1,19 +1,19 @@
 "use strict";
-// UserPromptSubmit: records today as an active date, then prints the recall rules and the memory index.
+// UserPromptSubmit: records today as an active date, syncs stats and indexes, then prints the recall rules
+// and each tier's topic index.
 const lib = require("./lib");
 
 const input = lib.readStdinJson();
 lib.debugLog("UserPromptSubmit", input);
 const date = lib.todayUtc();
 lib.writeActivity({ ...lib.withActiveDate(lib.readActivity(), date), reviewing_session: null });
-lib.syncStats(date);
+lib.sync(date);
 
-const memories = lib.listMemories();
 const indexSection = (tier) => {
-  const entries = memories
-    .filter((memory) => memory.tier === tier)
-    .map((memory) => `- ${memory.file}: ${lib.topicLine(memory.file)}`);
-  return [`## ${tier}`, ...(entries.length > 0 ? entries : ["(none)"])].join("\n");
+  const topics = lib
+    .readTierIndex(tier)
+    .map((entry) => `- ${lib.topicIndexFile(tier, entry.topic)}: ${entry.description || "(no description)"}`);
+  return [`## ${tier}`, ...(topics.length > 0 ? topics : ["(none)"])].join("\n");
 };
 const index = ["# ai-memory: index", ...lib.TIERS.map(indexSection)].join("\n\n");
-process.stdout.write(`${lib.renderCore("recall")}\n\n${index}\n`);
+process.stdout.write(`${lib.renderPaths()}\n\n${lib.renderCore("recall")}\n\n${index}\n`);
