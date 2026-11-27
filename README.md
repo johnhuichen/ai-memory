@@ -1,53 +1,59 @@
 # ai-memory
 
-A self-evolving memory for AI coding assistants. The AI records what it learns in topic files under `src/`, lists them in `src/index.md`, and reviews and refactors them over time. `src/core.md` defines how the memory works and changes only with your approval.
-
-The AI needs tools to read and write files on your machine.
+A self-evolving memory for Kiro CLI. Kiro records what it learns in memory files, reads the relevant ones at the start of each task, and tidies them once a day. Kiro hooks drive every step, so the rules arrive in the conversation at the moment they apply instead of depending on the AI to remember them.
 
 ## Setup
 
-1. Clone this repo anywhere.
-2. Run `./setup.sh`. It writes `VARS.md` with the absolute path of this repo, and creates an empty memory index at `src/index.md` if one doesn't exist. Both files are gitignored, along with every memory file except `src/core.md`. Re-run `setup.sh` whenever you move the repo; it leaves an existing index untouched.
-3. Configure your AI harness to load these three files at launch, using their absolute paths:
-   - `<repo>/VARS.md`
-   - `<repo>/src/core.md`
-   - `<repo>/src/index.md`
+Requirements: Kiro CLI 3.6 or later on the V3 engine, and Node.js 18 or later on `PATH`.
 
-### Kiro
+1. Clone this repo anywhere, for example `~/Code/ai-memory`.
+2. Run `./setup-kiro.sh`. It links `~/.kiro/ai-memory` to the repo and `~/.kiro/hooks/ai-memory.json` to the repo's hook file, which installs the hooks for every workspace. It writes no memory files; memories and stats stay in the repo.
+3. Start a new Kiro session. Sessions load hooks when they start.
 
-Add the files to `resources` in each agent file in `~/.kiro/agents/`:
+## Layout
 
-```json
-"resources": [
-  "file://<repo>/VARS.md",
-  "file://<repo>/src/core.md",
-  "file://<repo>/src/index.md"
-]
-```
+- `core/` holds the rules the hooks inject: `recall.md`, `learn.md` and `consolidate.md`.
+- `memory/short-term/` and `memory/long-term/` hold the memory files, one per topic. Each file starts with `> Topic: <the topic in one line>`.
+- `stats/` holds dates that the scripts read and write: `activity.json`, and one `<topic>.stat.json` per memory.
+- `hooks/` holds the hook definitions and their Node scripts.
 
-### Claude Code
+## How it works
 
-Add these lines to `~/.claude/CLAUDE.md`:
+All dates are UTC, in `YYYY-MM-DD` format. An active date is a date on which you sent Kiro a message. A memory's used dates are the dates on which Kiro read its file.
 
-```
-@<repo>/VARS.md
-@<repo>/src/core.md
-@<repo>/src/index.md
-```
+| Hook | Script | What it does |
+|---|---|---|
+| `UserPromptSubmit` | `on-prompt.js` | Adds today to the active dates, then injects `core/recall.md` and an index of every memory file. |
+| `PostToolUse` | `on-read.js` | When Kiro reads a memory file with a read tool or `cat`, adds today to that memory's used dates. |
+| `Stop` | `on-stop.js` | Runs consolidation at most once a day, then returns `{"decision": "block"}` with `core/learn.md`, and the consolidation report and `core/consolidate.md` when consolidation ran. Kiro then runs a follow-up that acts on them. |
 
-### Other harnesses
+Consolidation rules:
 
-Add an instruction to the harness's user-level instructions file (for example `~/.codex/AGENTS.md`, or Copilot's custom instructions): "At the start of every session, read `<repo>/VARS.md`, `<repo>/src/core.md` and `<repo>/src/index.md`, and follow `core.md`."
+| Rule | Condition | Approval |
+|---|---|---|
+| Promote a short-term memory | It was used on each of the last 5 active dates | Not needed |
+| Remove a short-term memory | 14 or more active dates came after its last use | Not needed |
+| Remove a long-term memory | 30 or more active dates came after its last use | Kiro asks you |
+
+New lessons and edits from the daily review always wait for your approval.
+
+### Why the date lists stay short
+
+- `activity.json` keeps the last 30 active dates, the largest threshold above. A memory last used before the oldest of those 30 dates already has 30 or more active dates after it, so dates further back never change a decision.
+- Each stat file keeps the last 5 used dates. Promotion needs a use on each of the last 5 active dates, and those are the 5 most recent dates, so older uses can't count. Removal only needs the latest use.
+
+### Debugging
+
+Create `/tmp/ai-memory-debug` and every hook appends its event to `/tmp/ai-memory-debug.log`.
 
 ## Contributing
 
 This is an early experiment, and contributions are welcome. Some useful ways to help:
 
-- Try the setup with an assistant other than Kiro, and report what works and what doesn't. Only the Kiro setup has been tested so far.
 - Open an issue when the memory behaves in a way you didn't expect, for example when the AI records a lesson it shouldn't, or misses one it should.
-- Suggest a lesson for the shared memory files in `src/`. Include the reason the lesson matters; lessons without a reason are left out.
+- Suggest a lesson for the memory files. Include the reason the lesson matters; lessons without a reason are left out.
 
-Please open an issue to discuss any change to `src/core.md` before sending a pull request. That file defines how the whole memory works, so changes to it are kept small and made with care.
+Please open an issue to discuss any change to `core/` or `hooks/` before sending a pull request. Those files define how the whole memory works, so changes to them are kept small and made with care.
 
 ## License
 

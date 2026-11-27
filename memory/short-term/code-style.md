@@ -1,4 +1,4 @@
-> This is a memory file governed by `<MEMORY_ROOT>/src/core.md`.
+> Topic: how to write code in any language
 
 # Code Style
 
@@ -18,4 +18,4 @@ Prefer immutable data and pure functions by default; they are easier to reason a
 - Keep functions free of side effects beyond their return value unless the side effect is their purpose (logging, I/O), so the same inputs always give the same output.
 
 ## Comments
-- Write a comment only when the code would be unclear or misleading without it, and match the length of the comments around it (often a one-line doc summary). Long comments bury the few that matter and drift from the code.
+- Don't add a comment when a reader can understand the code without it. When writing code, first try to make the code say it: a clearer name, an extracted function, a test name that states the case, or an `expect` message. When the task is only to trim comments, change no code. A comment that repeats the code is noise, and it drifts from the code as the code changes.

@@ -1,4 +1,4 @@
-> This is a memory file governed by `<MEMORY_ROOT>/src/core.md`.
+> Topic: how to write prompts, memory files and other instructions for AI
 
 # Writing Instructions for AI
 

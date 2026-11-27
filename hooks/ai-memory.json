@@ -1,0 +1,35 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "ai-memory-recall",
+      "description": "Records an active date, then injects the recall rules and the memory index.",
+      "trigger": "UserPromptSubmit",
+      "action": { "type": "command", "command": "node ~/.kiro/ai-memory/hooks/on-prompt.js" },
+      "timeout": 10
+    },
+    {
+      "name": "ai-memory-record-read",
+      "description": "Records a used date for each memory file read with a read tool.",
+      "trigger": "PostToolUse",
+      "matcher": "read",
+      "action": { "type": "command", "command": "node ~/.kiro/ai-memory/hooks/on-read.js" },
+      "timeout": 10
+    },
+    {
+      "name": "ai-memory-record-cat",
+      "description": "Records a used date for each memory file read with cat.",
+      "trigger": "PostToolUse",
+      "matcher": "shell",
+      "action": { "type": "command", "command": "node ~/.kiro/ai-memory/hooks/on-read.js" },
+      "timeout": 10
+    },
+    {
+      "name": "ai-memory-learn",
+      "description": "Runs daily consolidation, then makes the agent check the last exchange for lessons.",
+      "trigger": "Stop",
+      "action": { "type": "command", "command": "node ~/.kiro/ai-memory/hooks/on-stop.js" },
+      "timeout": 10
+    }
+  ]
+}
