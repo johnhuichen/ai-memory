@@ -1,6 +1,10 @@
 {
   "memories": [
     {
+      "file": "check-code-before-adding-rules.md",
+      "memory": "Before adding a rule to an AI instruction, check whether code already enforces it."
+    },
+    {
       "file": "concrete-triggers.md",
       "memory": "Make triggers and steps concrete, not vague timing."
     },

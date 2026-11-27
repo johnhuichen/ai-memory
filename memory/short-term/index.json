@@ -35,6 +35,10 @@
     {
       "topic": "writing-ai-instructions",
       "description": "how to write prompts, memory files and other instructions for AI"
+    },
+    {
+      "topic": "zsh",
+      "description": "how to write shell commands for zsh"
     }
   ]
 }

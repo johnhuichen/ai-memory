@@ -13,6 +13,10 @@
       "memory": "Change only what the request needs, and match the existing style."
     },
     {
+      "file": "check-bug-is-reachable.md",
+      "memory": "Before rating a reported bug, check whether normal use can reach it."
+    },
+    {
       "file": "design-at-domain-level.md",
       "memory": "When proposing a design or code change, stay at the level of the domain model."
     },
