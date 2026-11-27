@@ -1,6 +1,6 @@
 "use strict";
-// UserPromptSubmit: records today as an active date, syncs stats, then points the agent at the recall rules
-// and the tier indexes. Kiro truncates long hook output, so the hook only names the files to read.
+// UserPromptSubmit: records today as an active date, syncs stats, then points the agent at the recall rules.
+// Kiro truncates long hook output, so the hook only names the file to read.
 const lib = require("./lib");
 
 const input = lib.readStdinJson();

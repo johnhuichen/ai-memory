@@ -1,3 +1,0 @@
-> Memory: When a shorter wording is harder to read, use the longer one.
-
-When a shorter wording is harder to read, use the longer one. Keep small helper words like "that", "which" and "who", because dropping them makes the reader work harder to follow the sentence. The same holds for whole replies: when the user says a reply had too much detail, remove items (call sites, line numbers, side facts) and keep the full sentences that explain the items that remain. To explain why something behaves as it does, state the cause in a full sentence and walk one small numeric example step by step, because a compressed explanation hides the reasoning from the reader and the mistakes from you. Use tables for lookup data, not for reasoning.

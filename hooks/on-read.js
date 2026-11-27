@@ -1,5 +1,5 @@
 "use strict";
-// PostToolUse on the read tool: records today as a used date for every memory the tool read. Index reads don't count.
+// PostToolUse on the read tool: records today as a used date for every memory the tool read. Folder listings don't count.
 const fs = require("fs");
 const lib = require("./lib");
 
@@ -33,8 +33,5 @@ if (!(activity.reviewing_session && activity.reviewing_session === input.session
       const line = lib.memoryLine(memory.file);
       return line !== null && response.includes(`Memory: ${line}`);
     });
-  if (usedMemories.length > 0) {
-    lib.writeActivity(lib.withActiveDate(activity, date));
-    usedMemories.forEach((memory) => lib.recordUse(memory, date));
-  }
+  usedMemories.forEach((memory) => lib.recordUse(memory, date));
 }

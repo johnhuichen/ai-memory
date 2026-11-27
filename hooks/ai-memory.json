@@ -3,7 +3,7 @@
   "hooks": [
     {
       "name": "ai-memory-recall",
-      "description": "Records an active date, then injects the recall rules and the memory index.",
+      "description": "Records an active date, then points the agent at the recall rules.",
       "trigger": "UserPromptSubmit",
       "action": { "type": "command", "command": "node \"{{ROOT}}/hooks/on-prompt.js\"" },
       "timeout": 10

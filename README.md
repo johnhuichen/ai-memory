@@ -12,8 +12,8 @@ Requirements: Kiro CLI 3.6 or later on the V3 engine, and Node.js 18 or later on
 
 ## Layout
 
-- `core/` holds the rules the hooks inject: `recall.md`, `learn.md` and `consolidate.md`.
-- `memory/short-term/` and `memory/long-term/` hold the memories. A memory is one file holding one lesson, at `memory/<tier>/<topic>/<name>.md`, and its first line is `> Memory: <the rule in one line>`. Each tier's `index.json` lists its topics with a description, and each topic's `index.json` lists its memories. The AI adds entries when it writes a memory or topic; the script only moves or drops entries when it promotes or removes a memory.
+- `core/` holds the rules the hooks inject: `recall.md`, `learn.md` and `consolidate.md`. `learn.md` and `consolidate.md` both point to `write-memory.md`, which says how to name and write a memory.
+- `memory/short-term/` and `memory/long-term/` hold the memories. A memory is one file holding one lesson, at `memory/<tier>/<topic>/<name>.md`, and its first line is `> Memory: <the rule in one line>`. There is no index: topic and memory names are hyphenated lowercase words that say what they hold, so the AI picks memories by name. The scripts skip any other name and list it in the daily report.
 - `stats/` holds what the scripts read and write: `activity.json`, `stats/<tier>/<topic>/<name>.stat.json` for each memory, and `consolidation-report.md`, the latest daily report.
 - `hooks/` holds the hook definitions and their Node scripts.
 
@@ -25,9 +25,9 @@ Kiro cuts hook output after about 2,500 characters, so each hook injects only th
 
 | Hook | Script | What it does |
 |---|---|---|
-| `UserPromptSubmit` | `on-prompt.js` | Adds today to the active dates and syncs stats. Then tells Kiro to read `core/recall.md`, which sends it to both tier indexes. |
-| `PostToolUse` | `on-read.js` | When Kiro reads a memory file with the read tool, at its exact path, adds today to that memory's used dates. Index reads don't count. |
-| `Stop` | `on-stop.js` | Once a day, promotes and removes memories by the rules below, moving or dropping their index entries, and writes the report. It never repairs indexes: it skips a memory whose index can't be parsed and lists every index problem in the report. Then returns `{"decision": "block"}` telling Kiro to read `core/learn.md`, plus the report and `core/consolidate.md` on the first Stop of the day. |
+| `UserPromptSubmit` | `on-prompt.js` | Adds today to the active dates and syncs stats. Then tells Kiro to read `core/recall.md`, which has it list the memory folders and read the memories whose names apply. |
+| `PostToolUse` | `on-read.js` | When Kiro reads a memory file with the read tool, at its exact path, adds today to that memory's used dates. Folder listings don't count. |
+| `Stop` | `on-stop.js` | Once a day, promotes and removes memories by the rules below, deletes topic folders left empty, and writes the report, which also lists names the scripts ignore. Then returns `{"decision": "block"}` telling Kiro to read `core/learn.md`, plus the report and `core/consolidate.md` on the first Stop of the day. |
 
 Consolidation rules, applied by the script without asking:
 
@@ -37,7 +37,7 @@ Consolidation rules, applied by the script without asking:
 | Remove a short-term memory | It has 14 or more idle dates |
 | Remove a long-term memory | It has 30 or more idle dates |
 
-New lessons, and the merges and edits the daily review proposes, always wait for your approval.
+After the script runs, Kiro reviews all memories and merges duplicates and fixes memories that break the writing rules, without asking. It keeps every rule the memories state, and lists each change so you can check it in git. New lessons are also written without asking, and shown to you after.
 
 ### Why the date lists stay short
 
